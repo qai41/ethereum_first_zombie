@@ -1,0 +1,47 @@
+pragma solidity ^0.4.19;
+
+//基于以太坊的僵尸工厂
+contract ZombieFactory {
+
+    // 这里建立事件,与前端应用通讯交互
+    event NewZombie(uint zombieId, string name, uint dna);
+
+    //基因位数
+    uint dnaDigits = 16;
+    
+    //基因模数
+    uint dnaModulus = 10 ** dnaDigits;
+
+    //定义僵尸struct
+    struct Zombie {
+        string name;
+        uint dna;
+    }
+
+    //所有生成的僵尸都保存在这个数组里面,数组是Zombie结构
+    Zombie[] public zombies;
+
+    //实现创建僵尸方法,设为私有属性,只能自己调用
+    function _createZombie(string _name, uint _dna) private {
+        //将新僵尸推到僵尸数组里面,并返回僵尸id(ps:记得减1,因为zombie数字第一个元素索引为0,但id的类型为uint,最小为1,所以要减1)
+        uint id = zombies.push(Zombie(_name, _dna)) - 1;
+        
+        // 这里触发事件
+        NewZombie(id, _name, _dna);
+    } 
+    
+    //根据僵尸名字，生成对应的僵尸dna
+    function _generateRandomDna(string _name) private view returns (uint) {
+        //string转为256位的16进制数字
+        uint rand = uint(keccak256(_name));
+        
+        //将256位的16进制转为16位的16进制,因为我们的僵尸基因是16位的.当然你可以改为256位,这里就不用转了
+        return rand % dnaModulus;
+    }
+    
+    //根据输入的僵尸名字,随机生成一个僵尸
+    function createRandomZombie(string _name) public {
+        uint randDna = _generateRandomDna(_name);
+        _createZombie(_name, randDna);
+    }
+}
